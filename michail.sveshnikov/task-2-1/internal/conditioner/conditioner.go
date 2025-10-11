@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-var ErrorConditioner = errors.New("invalid comparison sign")
+var ErrConditioner = errors.New("invalid comparison sign")
 
 type Conditioner struct {
 	LowBound int
@@ -17,13 +17,12 @@ func (cond *Conditioner) OptimizeTemperature(compSign string, temperature int) (
 	switch compSign {
 	case ">=":
 		if temperature <= cond.UpBound {
-			if temperature >= cond.LowBound {
+			if temperature > cond.LowBound {
 				cond.LowBound = temperature
 			}
 
 			return cond.LowBound, nil
 		} else {
-
 			return invalidTemperature, nil
 		}
 	case "<=":
@@ -34,10 +33,9 @@ func (cond *Conditioner) OptimizeTemperature(compSign string, temperature int) (
 
 			return cond.LowBound, nil
 		} else {
-
 			return invalidTemperature, nil
 		}
 	default:
-		return invalidTemperature, ErrorConditioner
+		return invalidTemperature, ErrConditioner
 	}
 }

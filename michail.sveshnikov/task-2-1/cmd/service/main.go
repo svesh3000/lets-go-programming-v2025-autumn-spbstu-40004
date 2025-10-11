@@ -14,7 +14,7 @@ func main() {
 
 	var depNum int
 
-	_, err := fmt.Scan(&depNum)
+	_, err := fmt.Scanln(&depNum)
 	if err != nil || depNum < 1 || depNum > 1000 {
 		fmt.Println("ERROR: invalid number of departments!")
 
@@ -24,7 +24,7 @@ func main() {
 	for range depNum {
 		var employeeNum int
 
-		_, err = fmt.Scan(&employeeNum)
+		_, err = fmt.Scanln(&employeeNum)
 		if err != nil || employeeNum < 1 || employeeNum > 1000 {
 			fmt.Println("ERROR: invalid number of employees!")
 
@@ -37,20 +37,14 @@ func main() {
 		}
 
 		for range employeeNum {
-			var compSign string
+			var (
+				temperature int
+				compSign    string
+			)
 
-			_, err = fmt.Scan(&compSign)
+			_, err = fmt.Scanln(&compSign, &temperature)
 			if err != nil {
-				fmt.Println("ERROR: invalid comparison sign!")
-
-				continue
-			}
-
-			var temperature int
-
-			_, err = fmt.Scan(&temperature)
-			if err != nil {
-				fmt.Println("ERROR: invalid temperature!")
+				fmt.Println("ERROR: invalid request!")
 
 				continue
 			}
@@ -61,6 +55,7 @@ func main() {
 
 				continue
 			}
+
 			fmt.Println(optimizeTemp)
 		}
 	}
