@@ -23,16 +23,18 @@ func (cond *Conditioner) OptimizeTemperature(compSign string, temperature int) (
 
 			return cond.LowBound, nil
 		} else {
+			cond.LowBound = temperature
 			return invalidTemperature, nil
 		}
 	case "<=":
 		if temperature >= cond.LowBound {
-			if temperature <= cond.UpBound {
+			if temperature < cond.UpBound {
 				cond.UpBound = temperature
 			}
 
 			return cond.LowBound, nil
 		} else {
+			cond.UpBound = temperature
 			return invalidTemperature, nil
 		}
 	default:
