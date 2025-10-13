@@ -1,36 +1,55 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
+
+	"github.com/svesh3000/task-2-2/internal/maxheap"
 )
 
 func main() {
 	var numDishes int
 
-	_, err := fmt.Scanln(&numDishes)
+	_, err := fmt.Scan(&numDishes)
 	if err != nil || numDishes < 1 || numDishes > 10000 {
 		fmt.Println("ERROR: invalid number of dishes!")
 
 		return
 	}
 
-	for range numDishes {
-		var preferenceLevel int
+	buffet := &maxheap.MaxHeap{}
+	heap.Init(buffet)
 
-		_, err = fmt.Scan(&preferenceLevel)
-		if err != nil || preferenceLevel < -10000 || preferenceLevel > 10000 {
+	for range numDishes {
+		var preference int
+
+		_, err = fmt.Scan(&preference)
+		if err != nil || preference < -10000 || preference > 10000 {
 			fmt.Println("ERROR: invalid preference level of the dish!")
 
 			return
 		}
+
+		heap.Push(buffet, preference)
 	}
 
 	var num int
 
-	_, err = fmt.Scanln(&num)
+	_, err = fmt.Scan(&num)
 	if err != nil || num < 1 || num > numDishes {
 		fmt.Println("ERROR: invalid number of the kth dish by preference!")
 
 		return
+	}
+
+	for range num - 1 {
+		heap.Pop(buffet)
+	}
+
+	var dish int
+
+	dish, ok := heap.Pop(buffet).(int)
+	if ok {
+		fmt.Println(dish)
 	}
 }
