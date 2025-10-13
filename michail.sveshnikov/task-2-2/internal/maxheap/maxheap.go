@@ -1,24 +1,25 @@
-package MaxHeap
+package maxheap
 
 type MaxHeap []int
 
 func (heap *MaxHeap) Push(val any) {
 	value, ok := val.(int)
-	if ok {
-		*heap = append(*heap, value)
+	if !ok {
+		panic("MaxHeap.Push: value must be int")
 	}
 
-	panic("MaxHeap.Push: value must be int")
+	*heap = append(*heap, value)
 }
 
 func (heap *MaxHeap) Pop() any {
-	len := heap.Len()
+	old := *heap
+	len := len(old)
 	if len == 0 {
 		return nil
 	}
 
-	element := (*heap)[len-1]
-	*heap = (*heap)[0 : len-1]
+	element := (old)[len-1]
+	*heap = (old)[0 : len-1]
 
 	return element
 }
