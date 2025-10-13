@@ -11,7 +11,7 @@ func main() {
 	var numDishes int
 
 	_, err := fmt.Scan(&numDishes)
-	if err != nil || numDishes < 1 || numDishes > 10000 {
+	if err != nil || numDishes < 1 {
 		fmt.Println("ERROR: invalid number of dishes!")
 
 		return
@@ -24,7 +24,7 @@ func main() {
 		var preference int
 
 		_, err = fmt.Scan(&preference)
-		if err != nil || preference < -10000 || preference > 10000 {
+		if err != nil {
 			fmt.Println("ERROR: invalid preference level of the dish!")
 
 			return
