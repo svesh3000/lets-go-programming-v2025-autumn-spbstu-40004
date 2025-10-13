@@ -13,13 +13,14 @@ func (heap *MaxHeap) Push(val any) {
 
 func (heap *MaxHeap) Pop() any {
 	old := *heap
-	len := len(old)
-	if len == 0 {
+
+	lenHeap := len(old)
+	if lenHeap == 0 {
 		return nil
 	}
 
-	element := (old)[len-1]
-	*heap = (old)[0 : len-1]
+	element := (old)[lenHeap-1]
+	*heap = (old)[0 : lenHeap-1]
 
 	return element
 }
