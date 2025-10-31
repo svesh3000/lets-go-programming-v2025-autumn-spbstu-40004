@@ -37,4 +37,9 @@ func main() {
 	sort.Slice(currencies, func(i, j int) bool {
 		return currencies[i].Value > currencies[j].Value
 	})
+
+	err = centralbank.SaveCurrenciesToJSON(currencies, cfg.OutputFile)
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: Failed to save JSON file: %v", err))
+	}
 }
