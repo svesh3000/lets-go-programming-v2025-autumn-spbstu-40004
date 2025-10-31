@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -24,6 +25,9 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: Failed to load config: %v", err))
 	}
+
+	dir := filepath.Dir(config.OutputFile)
+	os.MkdirAll(dir, os.ModePerm)
 
 	fmt.Println(config.InputFile)
 	fmt.Println(config.OutputFile)
