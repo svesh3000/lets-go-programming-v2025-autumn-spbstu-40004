@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/svesh3000/task-3/internal/centralbank"
 	"github.com/svesh3000/task-3/internal/config"
 )
 
@@ -24,6 +25,11 @@ func main() {
 	dir := filepath.Dir(cfg.OutputFile)
 	os.MkdirAll(dir, os.ModePerm)
 
-	fmt.Println(cfg.InputFile)
-	fmt.Println(cfg.OutputFile)
+	// Шаг 2: Чтение и парсинг XML файла с валютами от ЦБ РФ
+	currencies, err := centralbank.ParseXMLFile(cfg.InputFile)
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: Failed to parse XML file: %v", err))
+	}
+
+	fmt.Println(currencies[0].CharCode)
 }
