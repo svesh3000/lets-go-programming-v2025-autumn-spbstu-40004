@@ -1,13 +1,14 @@
 package centralbank
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
-	"strings"
 
-	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/net/html/charset"
 )
 
 type (
@@ -30,32 +31,37 @@ type (
 )
 
 func ParseXMLFile(filename string) ([]Currency, error) {
-	data, err := os.ReadFile(filename)
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open XML file: %w", err)
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read XML file: %w", err)
 	}
 
-	decoder := charmap.Windows1251.NewDecoder()
-	utf8Data, err := decoder.Bytes(data)
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert encoding: %w", err)
-	}
+	content = bytes.ReplaceAll(content, []byte(","), []byte("."))
 
+	decoder := xml.NewDecoder(bytes.NewReader(content))
+	decoder.CharsetReader = charset.NewReaderLabel
 	var tempValCursData tempValCurs
-	err = xml.Unmarshal(utf8Data, &tempValCursData)
+
+	err = decoder.Decode(&tempValCursData)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse XML: %w", err)
 	}
 
 	currencies := make([]Currency, 0, len(tempValCursData.Valutes))
+
 	for _, tempValute := range tempValCursData.Valutes {
 		numCode, err := strconv.Atoi(tempValute.NumCode)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse NumCode for currency %s: %w", tempValute.CharCode, err)
 		}
 
-		valueStr := strings.ReplaceAll(tempValute.Value, ",", ".")
-		value, err := strconv.ParseFloat(valueStr, 64)
+		value, err := strconv.ParseFloat(tempValute.Value, 64)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse Value for currency %s: %w", tempValute.CharCode, err)
 		}
