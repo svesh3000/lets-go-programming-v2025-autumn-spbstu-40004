@@ -12,7 +12,7 @@ func SaveCurrenciesToJSON(currencies []Currency, outputFile string) error {
 		return fmt.Errorf("cannot marshal to JSON: %w", err)
 	}
 
-	err = os.WriteFile(outputFile, jsonData, 0644)
+	err = os.WriteFile(outputFile, jsonData, 0600)
 	if err != nil {
 		return fmt.Errorf("cannot write to file %s: %w", outputFile, err)
 	}

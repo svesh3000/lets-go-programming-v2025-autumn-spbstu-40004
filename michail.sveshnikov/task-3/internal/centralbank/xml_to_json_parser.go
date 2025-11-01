@@ -1,4 +1,3 @@
-// internal/centralbank/xml_to_json_parser.go
 package centralbank
 
 import (
@@ -48,15 +47,14 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 		return nil, fmt.Errorf("cannot parse XML: %w", err)
 	}
 
-	var currencies []Currency
+	currencies := make([]Currency, 0, len(tempValCursData.Valutes))
 	for _, tempValute := range tempValCursData.Valutes {
 		numCode, err := strconv.Atoi(tempValute.NumCode)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse NumCode for currency %s: %w", tempValute.CharCode, err)
 		}
 
-		valueStr := strings.Replace(tempValute.Value, ",", ".", -1)
-
+		valueStr := strings.ReplaceAll(tempValute.Value, ",", ".")
 		value, err := strconv.ParseFloat(valueStr, 64)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse Value for currency %s: %w", tempValute.CharCode, err)
