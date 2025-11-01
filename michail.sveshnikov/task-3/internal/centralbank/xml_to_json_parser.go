@@ -35,6 +35,7 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open XML file: %w", err)
 	}
+
 	defer func() {
 		closeErr := file.Close()
 		if closeErr != nil {
@@ -62,17 +63,17 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 	currencies := make([]Currency, 0, len(tempValCursData.Valutes))
 
 	for _, tempValute := range tempValCursData.Valutes {
-		// Обработка NumCode - если пустой, устанавливаем 0
 		numCode := 0
+
 		if tempValute.NumCode != "" {
 			var err error
+
 			numCode, err = strconv.Atoi(tempValute.NumCode)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse NumCode for currency %s: %w", tempValute.CharCode, err)
 			}
 		}
 
-		// Обработка CharCode - если пустой, оставляем пустую строку
 		charCode := tempValute.CharCode
 		if charCode == "" {
 			charCode = ""
