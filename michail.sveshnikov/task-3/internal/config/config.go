@@ -9,10 +9,8 @@ import (
 )
 
 var (
-	ErrConfigFileNotExist = errors.New("config file does not exist")
 	ErrInputFileRequired  = errors.New("input-file field is required in config")
 	ErrOutputFileRequired = errors.New("output-file field is required in config")
-	ErrInputFileNotExist  = errors.New("input file does not exist")
 )
 
 type Config struct {
@@ -23,7 +21,7 @@ type Config struct {
 func LoadConfig(configPath string) (*Config, error) {
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: %s: %v", ErrConfigFileNotExist, configPath, err)
+		return nil, fmt.Errorf("config file does not exist: %w", err)
 	}
 
 	data, err := os.ReadFile(configPath)
@@ -32,6 +30,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	var config Config
+
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse YAML config: %w", err)
@@ -45,11 +44,11 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, ErrOutputFileRequired
 	}
 
-	// Проверка существования входного файла
 	_, err = os.Stat(config.InputFile)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: %s: %v", ErrInputFileNotExist, config.InputFile, err)
+		return nil, fmt.Errorf("input file does not exist: %w", err)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("cannot access input file: %w", err)
 	}
