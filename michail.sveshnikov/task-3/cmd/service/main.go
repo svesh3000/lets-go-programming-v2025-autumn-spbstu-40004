@@ -14,6 +14,7 @@ import (
 func main() {
 	configPath := flag.String("config", "", "path to config file (required)")
 	flag.Parse()
+
 	if *configPath == "" {
 		panic("ERROR: Flag --config is required!")
 	}
@@ -24,6 +25,7 @@ func main() {
 	}
 
 	dir := filepath.Dir(cfg.OutputFile)
+
 	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: Failed to create output directory: %v", err))
