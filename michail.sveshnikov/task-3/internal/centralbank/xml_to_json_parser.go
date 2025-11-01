@@ -49,7 +49,13 @@ func readAndPreprocessXML(filename string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open XML file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		closeErr := file.Close()
+		if closeErr != nil {
+			_ = closeErr
+		}
+	}()
 
 	content, err := io.ReadAll(file)
 	if err != nil {
@@ -64,6 +70,7 @@ func readAndPreprocessXML(filename string) ([]byte, error) {
 func decodeXMLContent(content []byte) (*tempValCurs, error) {
 	decoder := xml.NewDecoder(bytes.NewReader(content))
 	decoder.CharsetReader = charset.NewReaderLabel
+
 	var tempValCursData tempValCurs
 
 	err := decoder.Decode(&tempValCursData)
@@ -112,9 +119,19 @@ func parseNumCode(numCodeStr string) (int, error) {
 		return 0, nil
 	}
 
-	return strconv.Atoi(numCodeStr)
+	numCode, err := strconv.Atoi(numCodeStr)
+	if err != nil {
+		return 0, fmt.Errorf("strconv.Atoi: %w", err)
+	}
+
+	return numCode, nil
 }
 
 func parseValue(valueStr string) (float64, error) {
-	return strconv.ParseFloat(valueStr, 64)
+	value, err := strconv.ParseFloat(valueStr, 64)
+	if err != nil {
+		return 0, fmt.Errorf("strconv.ParseFloat: %w", err)
+	}
+
+	return value, nil
 }
