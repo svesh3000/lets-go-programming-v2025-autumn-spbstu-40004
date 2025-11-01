@@ -1,10 +1,19 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
+)
+
+// Объявляем статические ошибки
+var (
+	ErrConfigFileNotExist = errors.New("config file does not exist")
+	ErrInputFileRequired  = errors.New("input-file field is required in config")
+	ErrOutputFileRequired = errors.New("output-file field is required in config")
+	ErrInputFileNotExist  = errors.New("input file does not exist")
 )
 
 type Config struct {
@@ -15,7 +24,7 @@ type Config struct {
 func LoadConfig(configPath string) (*Config, error) {
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("config file does not exist: %s", configPath)
+		return nil, fmt.Errorf("%w: %s", ErrConfigFileNotExist, configPath)
 	}
 
 	data, err := os.ReadFile(configPath)
@@ -31,16 +40,16 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	if config.InputFile == "" {
-		return nil, fmt.Errorf("input-file field is required in config")
+		return nil, ErrInputFileRequired
 	}
 
 	if config.OutputFile == "" {
-		return nil, fmt.Errorf("output-file field is required in config")
+		return nil, ErrOutputFileRequired
 	}
 
 	_, err = os.Stat(config.InputFile)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("input file does not exist: %s", config.InputFile)
+		return nil, fmt.Errorf("%w: %s", ErrInputFileNotExist, config.InputFile)
 	}
 
 	return &config, nil
