@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Объявляем статические ошибки
 var (
 	ErrConfigFileNotExist = errors.New("config file does not exist")
 	ErrInputFileRequired  = errors.New("input-file field is required in config")
