@@ -23,7 +23,7 @@ type Config struct {
 func LoadConfig(configPath string) (*Config, error) {
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: %s", ErrConfigFileNotExist, configPath)
+		return nil, fmt.Errorf("%w: %s: %v", ErrConfigFileNotExist, configPath, err)
 	}
 
 	data, err := os.ReadFile(configPath)
@@ -32,7 +32,6 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	var config Config
-
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse YAML config: %w", err)
@@ -46,9 +45,13 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, ErrOutputFileRequired
 	}
 
+	// Проверка существования входного файла
 	_, err = os.Stat(config.InputFile)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: %s", ErrInputFileNotExist, config.InputFile)
+		return nil, fmt.Errorf("%w: %s: %v", ErrInputFileNotExist, config.InputFile, err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("cannot access input file: %w", err)
 	}
 
 	return &config, nil

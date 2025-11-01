@@ -35,7 +35,12 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open XML file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		closeErr := file.Close()
+		if closeErr != nil {
+			_ = closeErr
+		}
+	}()
 
 	content, err := io.ReadAll(file)
 	if err != nil {
@@ -46,6 +51,7 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 
 	decoder := xml.NewDecoder(bytes.NewReader(content))
 	decoder.CharsetReader = charset.NewReaderLabel
+
 	var tempValCursData tempValCurs
 
 	err = decoder.Decode(&tempValCursData)
@@ -56,9 +62,20 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 	currencies := make([]Currency, 0, len(tempValCursData.Valutes))
 
 	for _, tempValute := range tempValCursData.Valutes {
-		numCode, err := strconv.Atoi(tempValute.NumCode)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse NumCode for currency %s: %w", tempValute.CharCode, err)
+		// Обработка NumCode - если пустой, устанавливаем 0
+		numCode := 0
+		if tempValute.NumCode != "" {
+			var err error
+			numCode, err = strconv.Atoi(tempValute.NumCode)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse NumCode for currency %s: %w", tempValute.CharCode, err)
+			}
+		}
+
+		// Обработка CharCode - если пустой, оставляем пустую строку
+		charCode := tempValute.CharCode
+		if charCode == "" {
+			charCode = ""
 		}
 
 		value, err := strconv.ParseFloat(tempValute.Value, 64)
@@ -68,7 +85,7 @@ func ParseXMLFile(filename string) ([]Currency, error) {
 
 		currencies = append(currencies, Currency{
 			NumCode:  numCode,
-			CharCode: tempValute.CharCode,
+			CharCode: charCode,
 			Value:    value,
 		})
 	}
