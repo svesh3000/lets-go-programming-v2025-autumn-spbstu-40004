@@ -2,17 +2,28 @@ package main
 
 import (
 	"container/heap"
+	"errors"
 	"fmt"
 
 	"github.com/svesh3000/task-2-2/internal/maxheap"
 )
 
+var (
+	errInvalidDishNum       = errors.New("invalid number of dishes")
+	errInvalidDishPrefLevel = errors.New("invalid preference level of the dish")
+	errInvalidKthDishNumber = errors.New("invalid number of the kth dish by preference")
+)
+
 func main() {
+	const (
+		minDishNum = 1
+	)
+
 	var numDishes int
 
 	_, err := fmt.Scan(&numDishes)
-	if err != nil || numDishes < 1 {
-		fmt.Println("ERROR: invalid number of dishes!")
+	if err != nil || numDishes < minDishNum {
+		fmt.Println(errInvalidDishNum)
 
 		return
 	}
@@ -25,7 +36,7 @@ func main() {
 
 		_, err = fmt.Scan(&preference)
 		if err != nil {
-			fmt.Println("ERROR: invalid preference level of the dish!")
+			fmt.Println(errInvalidDishPrefLevel)
 
 			return
 		}
@@ -36,8 +47,8 @@ func main() {
 	var num int
 
 	_, err = fmt.Scan(&num)
-	if err != nil || num < 1 || num > numDishes {
-		fmt.Println("ERROR: invalid number of the kth dish by preference!")
+	if err != nil || num < minDishNum || num > numDishes {
+		fmt.Println(errInvalidKthDishNumber)
 
 		return
 	}
