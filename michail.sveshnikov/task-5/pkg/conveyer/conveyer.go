@@ -40,3 +40,66 @@ func (conv *Conveyer) getOrCreateChannels(names ...string) {
 		conv.getOrCreateChannel(name)
 	}
 }
+
+func (conv *Conveyer) RegisterDecorator(
+	fn func(ctx context.Context, input chan string, output chan string) error,
+	inName string,
+	outName string,
+) {
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	conv.getOrCreateChannels(inName, outName)
+	inChan := conv.channels[inName]
+	outChan := conv.channels[outName]
+
+	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
+		return fn(ctx, inChan, outChan)
+	})
+}
+
+func (conv *Conveyer) RegisterMultiplexer(
+	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	inNames []string,
+	outName string,
+) {
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	conv.getOrCreateChannels(inNames...)
+	conv.getOrCreateChannel(outName)
+
+	inChans := make([]chan string, len(inNames))
+	for i, name := range inNames {
+		inChans[i] = conv.channels[name]
+	}
+
+	outChan := conv.channels[outName]
+
+	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
+		return fn(ctx, inChans, outChan)
+	})
+}
+
+func (conv *Conveyer) RegisterSeparator(
+	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	inName string,
+	outNames []string,
+) {
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	conv.getOrCreateChannel(inName)
+	conv.getOrCreateChannels(outNames...)
+
+	inChan := conv.channels[inName]
+
+	outChans := make([]chan string, len(outNames))
+	for i, name := range outNames {
+		outChans[i] = conv.channels[name]
+	}
+
+	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
+		return fn(ctx, inChan, outChans)
+	})
+}
