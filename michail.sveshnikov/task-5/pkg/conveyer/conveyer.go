@@ -2,6 +2,7 @@ package conveyer
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -102,4 +103,41 @@ func (conv *Conveyer) RegisterSeparator(
 	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
 		return fn(ctx, inChan, outChans)
 	})
+}
+
+var (
+	ErrChanNotFound = errors.New("chan not found")
+)
+
+const undefinedData = "undefined"
+
+func (conv *Conveyer) Send(chanName string, data string) error {
+	conv.mu.RLock()
+	ch, exists := conv.channels[chanName]
+	conv.mu.RUnlock()
+
+	if !exists {
+		return ErrChanNotFound
+	}
+
+	ch <- data
+
+	return nil
+}
+
+func (conv *Conveyer) Recv(chanName string) (string, error) {
+	conv.mu.RLock()
+	ch, exists := conv.channels[chanName]
+	conv.mu.RUnlock()
+
+	if !exists {
+		return "", ErrChanNotFound
+	}
+
+	data, ok := <-ch
+	if !ok {
+		return undefinedData, nil
+	}
+
+	return data, nil
 }
