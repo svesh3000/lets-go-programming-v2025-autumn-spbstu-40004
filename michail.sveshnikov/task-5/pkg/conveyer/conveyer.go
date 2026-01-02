@@ -3,7 +3,10 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Conveyer struct {
@@ -140,4 +143,30 @@ func (conv *Conveyer) Recv(chanName string) (string, error) {
 	}
 
 	return data, nil
+}
+
+func (conv *Conveyer) Run(ctx context.Context) error {
+	group, groupCtx := errgroup.WithContext(ctx)
+
+	for _, handler := range conv.handlers {
+		currHandler := handler
+		group.Go(func() error {
+			return currHandler(groupCtx)
+		})
+	}
+
+	runErr := group.Wait()
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	for name, ch := range conv.channels {
+		close(ch)
+		delete(conv.channels, name)
+	}
+
+	if runErr != nil {
+		return fmt.Errorf("conveyer run failed %w", runErr)
+	}
+
+	return nil
 }
