@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 )
 
 var (
@@ -14,9 +15,10 @@ var (
 const (
 	noDecoratorMarker = "no decorator"
 	prefDecorated     = "decorated: "
+	noMultiplexer     = "no multiplexer"
 )
 
-func PrefixDecorator(ctx context.Context, input <-chan string, output chan<- string) error {
+func PrefixDecoratorFunc(ctx context.Context, input <-chan string, output chan<- string) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -44,7 +46,7 @@ func PrefixDecorator(ctx context.Context, input <-chan string, output chan<- str
 	}
 }
 
-func Separator(ctx context.Context, input <-chan string, outputs []chan<- string) error {
+func SeparatorFunc(ctx context.Context, input <-chan string, outputs []chan<- string) error {
 	outputsLen := len(outputs)
 	if outputsLen == 0 {
 		return ErrNoOutputChannels
@@ -68,4 +70,42 @@ func Separator(ctx context.Context, input <-chan string, outputs []chan<- string
 			}
 		}
 	}
+}
+
+func MultiplexerFunc(ctx context.Context, inputs []<-chan string, output chan<- string) error {
+	if len(inputs) == 0 {
+		return nil
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(inputs))
+
+	for i := range inputs {
+		go func(inputChan <-chan string) {
+			defer wg.Done()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case data, ok := <-inputChan:
+					if !ok {
+						return
+					}
+
+					if !strings.Contains(data, noMultiplexer) {
+						select {
+						case <-ctx.Done():
+							return
+						case output <- data:
+						}
+					}
+				}
+			}
+		}(inputs[i])
+	}
+
+	wg.Wait()
+
+	return nil
 }

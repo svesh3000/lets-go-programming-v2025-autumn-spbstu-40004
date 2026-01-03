@@ -46,7 +46,7 @@ func (conv *Conveyer) getOrCreateChannels(names ...string) {
 }
 
 func (conv *Conveyer) RegisterDecorator(
-	fn func(ctx context.Context, input chan string, output chan string) error,
+	fn func(ctx context.Context, input <-chan string, output chan<- string) error,
 	inName string,
 	outName string,
 ) {
@@ -63,7 +63,7 @@ func (conv *Conveyer) RegisterDecorator(
 }
 
 func (conv *Conveyer) RegisterMultiplexer(
-	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	fn func(ctx context.Context, inputs []<-chan string, output chan<- string) error,
 	inNames []string,
 	outName string,
 ) {
@@ -73,7 +73,7 @@ func (conv *Conveyer) RegisterMultiplexer(
 	conv.getOrCreateChannels(inNames...)
 	conv.getOrCreateChannel(outName)
 
-	inChans := make([]chan string, len(inNames))
+	inChans := make([]<-chan string, len(inNames))
 	for i, name := range inNames {
 		inChans[i] = conv.channels[name]
 	}
@@ -86,7 +86,7 @@ func (conv *Conveyer) RegisterMultiplexer(
 }
 
 func (conv *Conveyer) RegisterSeparator(
-	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	fn func(ctx context.Context, input <-chan string, outputs []chan<- string) error,
 	inName string,
 	outNames []string,
 ) {
@@ -98,7 +98,7 @@ func (conv *Conveyer) RegisterSeparator(
 
 	inChan := conv.channels[inName]
 
-	outChans := make([]chan string, len(outNames))
+	outChans := make([]chan<- string, len(outNames))
 	for i, name := range outNames {
 		outChans[i] = conv.channels[name]
 	}
