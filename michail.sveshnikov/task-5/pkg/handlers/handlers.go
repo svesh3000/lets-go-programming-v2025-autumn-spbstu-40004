@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-var ErrNoDecoration = errors.New("can't be decorated")
+var (
+	ErrNoDecoration     = errors.New("can't be decorated")
+	ErrNoOutputChannels = errors.New("no output channels provided")
+)
 
 const (
 	noDecoratorMarker = "no decorator"
@@ -14,8 +17,6 @@ const (
 )
 
 func PrefixDecorator(ctx context.Context, input <-chan string, output chan<- string) error {
-	defer close(output)
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -38,6 +39,32 @@ func PrefixDecorator(ctx context.Context, input <-chan string, output chan<- str
 			case <-ctx.Done():
 				return nil
 			case output <- processed:
+			}
+		}
+	}
+}
+
+func Separator(ctx context.Context, input <-chan string, outputs []chan<- string) error {
+	outputsLen := len(outputs)
+	if outputsLen == 0 {
+		return ErrNoOutputChannels
+	}
+
+	currIdx := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case data, ok := <-input:
+			if !ok {
+				return nil
+			}
+
+			select {
+			case <-ctx.Done():
+				return nil
+			case outputs[currIdx%outputsLen] <- data:
+				currIdx++
 			}
 		}
 	}
