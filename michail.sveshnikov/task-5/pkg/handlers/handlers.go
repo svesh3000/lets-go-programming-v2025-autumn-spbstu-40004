@@ -18,7 +18,7 @@ const (
 	noMultiplexer     = "no multiplexer"
 )
 
-func PrefixDecoratorFunc(ctx context.Context, input <-chan string, output chan<- string) error {
+func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -46,7 +46,7 @@ func PrefixDecoratorFunc(ctx context.Context, input <-chan string, output chan<-
 	}
 }
 
-func SeparatorFunc(ctx context.Context, input <-chan string, outputs []chan<- string) error {
+func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
 	outputsLen := len(outputs)
 	if outputsLen == 0 {
 		return ErrNoOutputChannels
@@ -72,17 +72,17 @@ func SeparatorFunc(ctx context.Context, input <-chan string, outputs []chan<- st
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, inputs []<-chan string, output chan<- string) error {
+func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
 	if len(inputs) == 0 {
 		return nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(inputs))
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(inputs))
 
-	for i := range inputs {
-		go func(inputChan <-chan string) {
-			defer wg.Done()
+	for idx := range inputs {
+		go func(inputChan chan string) {
+			defer waitGroup.Done()
 
 			for {
 				select {
@@ -102,10 +102,10 @@ func MultiplexerFunc(ctx context.Context, inputs []<-chan string, output chan<- 
 					}
 				}
 			}
-		}(inputs[i])
+		}(inputs[idx])
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
 
 	return nil
 }
