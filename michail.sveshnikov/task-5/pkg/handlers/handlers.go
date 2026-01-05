@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrNoDecoration     = errors.New("can't be decorated")
-	ErrNoOutputChannels = errors.New("no output channels provided")
+	ErrNoDecoration = errors.New("can't be decorated")
+	ErrNoChans      = errors.New("no output channels provided")
 )
 
 const (
@@ -49,7 +49,7 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
 	outputsLen := len(outputs)
 	if outputsLen == 0 {
-		return ErrNoOutputChannels
+		return ErrNoChans
 	}
 
 	currIdx := 0
@@ -75,7 +75,7 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
 	if len(inputs) == 0 {
-		return nil
+		return ErrNoChans
 	}
 
 	var waitGroup sync.WaitGroup

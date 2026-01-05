@@ -29,20 +29,20 @@ func New(size int) *Conveyer {
 	}
 }
 
-func (conv *Conveyer) getOrCreateChannel(name string) {
-	conv.mu.Lock()
-	defer conv.mu.Unlock()
-
-	if _, exists := conv.channels[name]; exists {
-		return
+func (conv *Conveyer) getCreateChannel(name string) chan string {
+	if ch, exists := conv.channels[name]; exists {
+		return ch
 	}
 
-	conv.channels[name] = make(chan string, conv.size)
+	ch := make(chan string, conv.size)
+	conv.channels[name] = ch
+
+	return ch
 }
 
-func (conv *Conveyer) getOrCreateChannels(names ...string) {
+func (conv *Conveyer) getCreateChannels(names ...string) {
 	for _, name := range names {
-		conv.getOrCreateChannel(name)
+		conv.getCreateChannel(name)
 	}
 }
 
@@ -54,9 +54,8 @@ func (conv *Conveyer) RegisterDecorator(
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.getOrCreateChannels(inName, outName)
-	inChan := conv.channels[inName]
-	outChan := conv.channels[outName]
+	inChan := conv.getCreateChannel(inName)
+	outChan := conv.getCreateChannel(outName)
 
 	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
 		return handlerFunc(ctx, inChan, outChan)
@@ -71,15 +70,14 @@ func (conv *Conveyer) RegisterMultiplexer(
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.getOrCreateChannels(inNames...)
-	conv.getOrCreateChannel(outName)
+	conv.getCreateChannels(inNames...)
 
 	inChans := make([]chan string, len(inNames))
 	for i, name := range inNames {
 		inChans[i] = conv.channels[name]
 	}
 
-	outChan := conv.channels[outName]
+	outChan := conv.getCreateChannel(outName)
 
 	conv.handlers = append(conv.handlers, func(ctx context.Context) error {
 		return handlerFunc(ctx, inChans, outChan)
@@ -94,10 +92,8 @@ func (conv *Conveyer) RegisterSeparator(
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.getOrCreateChannel(inName)
-	conv.getOrCreateChannels(outNames...)
-
-	inChan := conv.channels[inName]
+	inChan := conv.getCreateChannel(inName)
+	conv.getCreateChannels(outNames...)
 
 	outChans := make([]chan string, len(outNames))
 	for i, name := range outNames {
@@ -141,8 +137,18 @@ func (conv *Conveyer) Recv(chanName string) (string, error) {
 }
 
 func (conv *Conveyer) Run(ctx context.Context) error {
-	group, groupCtx := errgroup.WithContext(ctx)
+	defer func() {
+		conv.mu.RLock()
+		defer conv.mu.RUnlock()
 
+		for _, ch := range conv.channels {
+			close(ch)
+		}
+	}()
+
+	conv.mu.RLock()
+
+	group, groupCtx := errgroup.WithContext(ctx)
 	for _, handler := range conv.handlers {
 		currHandler := handler
 
@@ -151,18 +157,10 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 		})
 	}
 
-	runErr := group.Wait()
+	conv.mu.RUnlock()
 
-	conv.mu.Lock()
-	defer conv.mu.Unlock()
-
-	for name, ch := range conv.channels {
-		close(ch)
-		delete(conv.channels, name)
-	}
-
-	if runErr != nil {
-		return fmt.Errorf("conveyer run failed %w", runErr)
+	if err := group.Wait(); err != nil {
+		return fmt.Errorf("conveyer run failed: %w", err)
 	}
 
 	return nil
