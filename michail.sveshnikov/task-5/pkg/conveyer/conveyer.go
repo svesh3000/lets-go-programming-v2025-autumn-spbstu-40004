@@ -9,6 +9,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var ErrChanNotFound = errors.New("chan not found")
+
+const undefinedData = "undefined"
+
 type Conveyer struct {
 	mu       sync.RWMutex
 	channels map[string]chan string
@@ -104,12 +108,6 @@ func (conv *Conveyer) RegisterSeparator(
 		return handlerFunc(ctx, inChan, outChans)
 	})
 }
-
-var (
-	ErrChanNotFound = errors.New("chan not found")
-)
-
-const undefinedData = "undefined"
 
 func (conv *Conveyer) Send(chanName string, data string) error {
 	conv.mu.RLock()

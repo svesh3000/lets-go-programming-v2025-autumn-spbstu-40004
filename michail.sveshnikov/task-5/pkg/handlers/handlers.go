@@ -53,6 +53,7 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 	}
 
 	currIdx := 0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,6 +79,7 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 	}
 
 	var waitGroup sync.WaitGroup
+
 	waitGroup.Add(len(inputs))
 
 	for idx := range inputs {
