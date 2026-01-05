@@ -149,6 +149,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 	conv.mu.RLock()
 
 	group, groupCtx := errgroup.WithContext(ctx)
+
 	for _, handler := range conv.handlers {
 		currHandler := handler
 
