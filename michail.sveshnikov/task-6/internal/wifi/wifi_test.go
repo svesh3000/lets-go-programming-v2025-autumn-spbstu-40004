@@ -1,6 +1,7 @@
 package wifi_test
 
 import (
+	"fmt"
 	"net"
 	"testing"
 
@@ -21,19 +22,35 @@ func parseMAC(t *testing.T, macStr string) net.HardwareAddr {
 func TestGetAddresses(t *testing.T) {
 	mockWifi := NewWiFiHandle(t)
 
-	iface := &wifi.Interface{
-		Name:         "one",
-		HardwareAddr: parseMAC(t, "00:11:22:33:44:55"),
+	interfaces := []*wifi.Interface{
+		{Name: "one", HardwareAddr: parseMAC(t, "00:11:22:33:44:55")},
+		{Name: "two", HardwareAddr: parseMAC(t, "aa:bb:cc:dd:ee:ff")},
 	}
-	mockWifi.On("Interfaces").Return([]*wifi.Interface{iface}, nil)
+
+	mockWifi.On("Interfaces").Return(interfaces, nil)
 
 	service := mywifi.New(mockWifi)
-
 	addrs, err := service.GetAddresses()
 
 	require.NoError(t, err)
-	require.Len(t, addrs, 1)
+	require.Len(t, addrs, 2)
 	require.Equal(t, parseMAC(t, "00:11:22:33:44:55"), addrs[0])
+	require.Equal(t, parseMAC(t, "aa:bb:cc:dd:ee:ff"), addrs[1])
+
+	mockWifi.AssertExpectations(t)
+}
+
+func TestGetAddressesError(t *testing.T) {
+	mockWifi := NewWiFiHandle(t)
+
+	mockWifi.On("Interfaces").Return(nil, fmt.Errorf("no wifi"))
+
+	service := mywifi.New(mockWifi)
+	addrs, err := service.GetAddresses()
+
+	require.Error(t, err)
+	require.ErrorContains(t, err, "getting interfaces")
+	require.Nil(t, addrs)
 
 	mockWifi.AssertExpectations(t)
 }
