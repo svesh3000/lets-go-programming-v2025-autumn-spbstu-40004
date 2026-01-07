@@ -20,29 +20,34 @@ func getMockDBRows(t *testing.T, names []string) *sqlmock.Rows {
 }
 
 func TestGetNames(t *testing.T) {
-	t.Run("success with data", func(t *testing.T) {
-		mockDB, mock, err := sqlmock.New()
-		require.NoError(t, err)
-		defer mockDB.Close()
+	successCases := []struct {
+		name         string
+		expectedRows []string
+	}{
+		{"two names", []string{"one", "two"}},
+		{"three names", []string{"one", "two", "three"}},
+		{"name with empty", []string{"one", ""}},
+		{"empty names", []string{"", ""}},
+	}
 
-		dbService := db.New(mockDB)
+	for _, tc := range successCases {
+		t.Run("success/"+tc.name, func(t *testing.T) {
+			t.Parallel()
 
-		testTable := [][]string{
-			{"one", "two"},
-			{"one", "two", "three"},
-			{"one", ""},
-			{"", ""},
-		}
+			mockDB, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			defer mockDB.Close()
 
-		for _, row := range testTable {
+			dbService := db.New(mockDB)
+
 			mock.ExpectQuery("SELECT name FROM users").
-				WillReturnRows(getMockDBRows(t, row))
+				WillReturnRows(getMockDBRows(t, tc.expectedRows))
 
 			names, err := dbService.GetNames()
 
 			require.NoError(t, err)
-			require.Equal(t, row, names)
+			require.Equal(t, tc.expectedRows, names)
 			require.NoError(t, mock.ExpectationsWereMet())
-		}
-	})
+		})
+	}
 }
