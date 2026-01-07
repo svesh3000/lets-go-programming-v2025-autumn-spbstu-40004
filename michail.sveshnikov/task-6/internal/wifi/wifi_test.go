@@ -10,6 +10,8 @@ import (
 	mywifi "github.com/svesh3000/task-6/internal/wifi"
 )
 
+//go:generate mockery --name=WiFiHandle --testonly --quiet --outpkg wifi_test --output .
+
 func parseMAC(t *testing.T, macStr string) net.HardwareAddr {
 	t.Helper()
 
@@ -20,6 +22,8 @@ func parseMAC(t *testing.T, macStr string) net.HardwareAddr {
 }
 
 func TestGetAddresses(t *testing.T) {
+	t.Parallel()
+
 	mockWifi := NewWiFiHandle(t)
 
 	interfaces := []*wifi.Interface{
@@ -41,6 +45,8 @@ func TestGetAddresses(t *testing.T) {
 }
 
 func TestGetAddressesError(t *testing.T) {
+	t.Parallel()
+
 	mockWifi := NewWiFiHandle(t)
 
 	mockWifi.On("Interfaces").Return(nil, fmt.Errorf("no wifi"))
@@ -51,6 +57,46 @@ func TestGetAddressesError(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "getting interfaces")
 	require.Nil(t, addrs)
+
+	mockWifi.AssertExpectations(t)
+}
+
+func TestGetNames(t *testing.T) {
+	t.Parallel()
+
+	mockWifi := NewWiFiHandle(t)
+
+	interfaces := []*wifi.Interface{
+		{Name: "one", HardwareAddr: parseMAC(t, "00:11:22:33:44:55")},
+		{Name: "two", HardwareAddr: parseMAC(t, "aa:bb:cc:dd:ee:ff")},
+	}
+
+	mockWifi.On("Interfaces").Return(interfaces, nil)
+
+	service := mywifi.New(mockWifi)
+	names, err := service.GetNames()
+
+	require.NoError(t, err)
+	require.Len(t, names, 2)
+	require.Equal(t, "one", names[0])
+	require.Equal(t, "two", names[1])
+
+	mockWifi.AssertExpectations(t)
+}
+
+func TestGetNamesError(t *testing.T) {
+	t.Parallel()
+
+	mockWifi := NewWiFiHandle(t)
+
+	mockWifi.On("Interfaces").Return(nil, fmt.Errorf("no wifi"))
+
+	service := mywifi.New(mockWifi)
+	names, err := service.GetNames()
+
+	require.Error(t, err)
+	require.ErrorContains(t, err, "getting interfaces")
+	require.Nil(t, names)
 
 	mockWifi.AssertExpectations(t)
 }
