@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -50,4 +51,24 @@ func TestGetNames(t *testing.T) {
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+
+	t.Run("database query error", func(t *testing.T) {
+		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		dbService := db.New(mockDB)
+
+		mock.ExpectQuery("SELECT name FROM users").
+			WillReturnError(fmt.Errorf("connection failed"))
+
+		names, err := dbService.GetNames()
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, "db query")
+		require.Nil(t, names)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
 }
