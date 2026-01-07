@@ -71,4 +71,51 @@ func TestGetNames(t *testing.T) {
 		require.Nil(t, names)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
+
+	t.Run("row scanning error", func(t *testing.T) {
+		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		dbService := db.New(mockDB)
+
+		mock.ExpectQuery("SELECT name FROM users").
+			WillReturnRows(
+				sqlmock.NewRows([]string{"name"}).
+					AddRow(nil),
+			)
+
+		names, err := dbService.GetNames()
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, "rows scanning")
+		require.Nil(t, names)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("rows error", func(t *testing.T) {
+		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		dbService := db.New(mockDB)
+
+		mock.ExpectQuery("SELECT name FROM users").
+			WillReturnRows(
+				sqlmock.NewRows([]string{"name"}).
+					AddRow("One").
+					RowError(0, fmt.Errorf("row iteration failed")),
+			)
+
+		names, err := dbService.GetNames()
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, "rows error")
+		require.Nil(t, names)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
 }
