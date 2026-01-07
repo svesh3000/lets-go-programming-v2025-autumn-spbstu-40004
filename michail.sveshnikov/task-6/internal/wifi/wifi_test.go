@@ -1,7 +1,7 @@
 package wifi_test
 
 import (
-	"fmt"
+	"errors"
 	"net"
 	"testing"
 
@@ -11,6 +11,8 @@ import (
 )
 
 //go:generate mockery --name=WiFiHandle --testonly --quiet --outpkg wifi_test --output .
+
+var errNoWifi = errors.New("no wifi")
 
 func parseMAC(t *testing.T, macStr string) net.HardwareAddr {
 	t.Helper()
@@ -49,7 +51,7 @@ func TestGetAddressesError(t *testing.T) {
 
 	mockWifi := NewWiFiHandle(t)
 
-	mockWifi.On("Interfaces").Return(nil, fmt.Errorf("no wifi"))
+	mockWifi.On("Interfaces").Return(nil, errNoWifi)
 
 	service := mywifi.New(mockWifi)
 	addrs, err := service.GetAddresses()
@@ -89,7 +91,7 @@ func TestGetNamesError(t *testing.T) {
 
 	mockWifi := NewWiFiHandle(t)
 
-	mockWifi.On("Interfaces").Return(nil, fmt.Errorf("no wifi"))
+	mockWifi.On("Interfaces").Return(nil, errNoWifi)
 
 	service := mywifi.New(mockWifi)
 	names, err := service.GetNames()

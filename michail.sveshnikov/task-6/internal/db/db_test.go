@@ -1,12 +1,17 @@
 package db_test
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/require"
 	"github.com/svesh3000/task-6/internal/db"
+)
+
+var (
+	errConnectionFailed = errors.New("connection failed")
+	errRowIteration     = errors.New("row iteration failed")
 )
 
 type testCase struct {
@@ -27,6 +32,8 @@ func createMockRows(names []string) *sqlmock.Rows {
 }
 
 func runDBTests(t *testing.T, testCases []testCase, method func(db.DBService) ([]string, error)) {
+	t.Helper()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -36,6 +43,7 @@ func runDBTests(t *testing.T, testCases []testCase, method func(db.DBService) ([
 			defer mockDB.Close()
 
 			dbService := db.New(mockDB)
+
 			tc.setupMock(mock)
 
 			names, err := method(dbService)
@@ -55,6 +63,8 @@ func runDBTests(t *testing.T, testCases []testCase, method func(db.DBService) ([
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
+
 	testCases := []testCase{
 		{
 			name: "success: two names",
@@ -78,7 +88,7 @@ func TestGetNames(t *testing.T) {
 			name: "error: database query error",
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery("SELECT name FROM users").
-					WillReturnError(fmt.Errorf("connection failed"))
+					WillReturnError(errConnectionFailed)
 			},
 			wantErr:   true,
 			errSubstr: "db query",
@@ -102,7 +112,7 @@ func TestGetNames(t *testing.T) {
 					WillReturnRows(
 						sqlmock.NewRows([]string{"name"}).
 							AddRow("one").
-							RowError(0, fmt.Errorf("row iteration failed")),
+							RowError(0, errRowIteration),
 					)
 			},
 			wantErr:   true,
@@ -116,6 +126,8 @@ func TestGetNames(t *testing.T) {
 }
 
 func TestGetUniqueNames(t *testing.T) {
+	t.Parallel()
+
 	testCases := []testCase{
 		{
 			name: "success: two names",
@@ -139,7 +151,7 @@ func TestGetUniqueNames(t *testing.T) {
 			name: "error: database query error",
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery("SELECT DISTINCT name FROM users").
-					WillReturnError(fmt.Errorf("connection failed"))
+					WillReturnError(errConnectionFailed)
 			},
 			wantErr:   true,
 			errSubstr: "db query",
@@ -163,7 +175,7 @@ func TestGetUniqueNames(t *testing.T) {
 					WillReturnRows(
 						sqlmock.NewRows([]string{"name"}).
 							AddRow("one").
-							RowError(0, fmt.Errorf("row iteration failed")),
+							RowError(0, errRowIteration),
 					)
 			},
 			wantErr:   true,
