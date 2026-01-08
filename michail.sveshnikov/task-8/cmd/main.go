@@ -4,17 +4,15 @@ import (
 	"fmt"
 
 	"github.com/svesh3000/task-8/pkg/config"
-	"gopkg.in/yaml.v3"
 )
 
 func main() {
-	var cfg config.Config
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Println("load config error, %w", err)
 
-	err := yaml.Unmarshal(config.ConfigData, &cfg)
-	if err == nil {
-		fmt.Println("parsing error, %w", err)
 		return
 	}
 
-	fmt.Println(cfg.Environment + "" + cfg.LogLevel)
+	fmt.Println(cfg.Environment + " " + cfg.LogLevel)
 }
